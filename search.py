@@ -4,7 +4,6 @@ GOOGLE_MAPS_URL = "https://www.google.com/maps"
 DEGREE_ENCODING = "%C2%B0"
 DOUBLE_QUOTE_ENCODING = "%22"
 
-# assume as tuple
 def geo_search(latitude:tuple, longitude:tuple, ref_a, ref_b):
     latitude_degree = latitude[0]
     latitude_minute = latitude[1]
@@ -20,12 +19,12 @@ def geo_search(latitude:tuple, longitude:tuple, ref_a, ref_b):
     url_a = GOOGLE_MAPS_URL
     url_b = f"/@{latitude_decimal},{longitude_decimal},17z"
     
-    #print(url_a + url_b)
     browser.open(url_a + url_b)
  
  
 def dms_to_decimal(deg, min, sec, ref):
-    decimal_conversion = round(deg + (float(min)/60) + (float(sec)/3600), 6) # move rounding to string format later
+    # move rounding to string format later
+    decimal_conversion = round(deg + (float(min)/60) + (float(sec)/3600), 6) 
     if ref in ["W", "S"]:
         decimal_conversion *= -1
     return decimal_conversion
