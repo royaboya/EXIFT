@@ -12,13 +12,6 @@ from search import geo_search
 
 parser = argparse.ArgumentParser()
 
-# TODO: add option for explaining exiftags?
-# TODO: check if exif data even exists?
-# maybe check file types too idk
-# tries to look up the generlal location 
-# add option to do multiple photos
-   
-
 """
 general info like file name, file size, etc
 """
@@ -58,7 +51,11 @@ def main():
         with PIL.Image.open(args.input_image) as input_image:
             exif_data = input_image.getexif()
             
-            output_content += f"EXIFT Summary for {args.input_image}:\n{create_section_line()}\n"
+            header = f"EXIFT Summary for {args.input_image}:\n"
+            
+            output_content += create_section_line(len(header)) + "\n"
+            output_content += header
+            output_content += create_section_line(len(header)) + "\n"
 
             for(exif_tag, v) in exif_data.items():
                 output_content += f"{Base(exif_tag).name}:{v}\n" 
@@ -116,8 +113,10 @@ def write_to_file(file_name, content, directory):
         file.write(content)    
     
     
-def create_section_line():
-    return "="*30
+def create_section_line(n):
+    if n > 40:
+        n = 40
+    return "="*n
 
 
 def join_content(content_lst):
