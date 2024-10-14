@@ -40,7 +40,6 @@ def main():
 
     output_content = []
     
-    # maybe save exif data globally and apend to output in some other if statement
     exif_data = {}
 
     # input image is path
@@ -53,13 +52,22 @@ def main():
             
             header = f"EXIFT Summary for {args.input_image}:\n"
             
-            output_content += create_section_line(len(header)) + "\n"
+            output_content += create_section_line(len(header))
             output_content += header
-            output_content += create_section_line(len(header)) + "\n"
-
+            output_content += create_section_line(len(header))
             for(exif_tag, v) in exif_data.items():
                 output_content += f"{Base(exif_tag).name}:{v}\n" 
-    
+                
+            output_content += create_section_line(len(header))
+            output_content += "File Summary:\n"
+            output_content += create_section_line(len(header))
+            
+            # TODO: handle file info in separate method
+            output_content += f"File Name: {os.path.basename(args.input_image)}\n"
+            output_content += f"File Size: {os.path.getsize(args.input_image)}\n"
+            output_content += f"File Type: "
+            output_content += f"Image Height: "
+            output_content += f"Image Width: "
 
     if args.output_file:
         # writes to default (./out), otherwise is in -d option, assumes input is a regular file and not a path
@@ -116,7 +124,9 @@ def write_to_file(file_name, content, directory):
 def create_section_line(n):
     if n > 40:
         n = 40
-    return "="*n
+    if n < 0:
+        n = 1
+    return "="*n + "\n"
 
 
 def join_content(content_lst):
