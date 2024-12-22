@@ -11,10 +11,6 @@ from PIL.ExifTags import Base
 from search import geo_search
 
 parser = argparse.ArgumentParser()
-
-"""
-general info like file name, file size, etc
-"""
     
 def set_arguments():
     INPUT_IMAGE_TEXT = "help-image"
@@ -56,18 +52,21 @@ def main():
             output_content += header
             output_content += create_section_line(len(header))
             for(exif_tag, v) in exif_data.items():
-                output_content += f"{Base(exif_tag).name}:{v}\n" 
+                v_converted = str(v)
+                formatted_line = string_formatter(Base(exif_tag).name, v_converted)
+                output_content += formatted_line
+                
                 
             output_content += create_section_line(len(header))
             output_content += "File Summary:\n"
             output_content += create_section_line(len(header))
             
             # TODO: handle file info in separate method
-            output_content += f"File Name: {os.path.basename(args.input_image)}\n"
-            output_content += f"File Size: {os.path.getsize(args.input_image)}\n"
-            output_content += f"File Type: "
-            output_content += f"Image Height: "
-            output_content += f"Image Width: "
+            output_content += string_formatter("File Name", os.path.basename(args.input_image))
+            output_content += string_formatter("File Size", os.path.getsize(args.input_image))
+            output_content += string_formatter("Image Height", input_image.height)
+            output_content += string_formatter("Image Width", input_image.width)
+
 
     if args.output_file:
         # writes to default (./out), otherwise is in -d option, assumes input is a regular file and not a path
@@ -91,7 +90,11 @@ def main():
     if args.s:
         # if both work then run search
         GPS_EXISTS = (34853 in [k for k in exif_data.keys()])
-
+        
+        
+        if not(GPS_EXISTS):
+            print(f"GPS Information does not exist for {args.input_image}")
+            return      
         
         if not(args.input_image):
             parser.error("--search requires --input-image")
@@ -99,19 +102,27 @@ def main():
             # gets gps data and convert to readable keys
             gps_info = {GPSTAGS.get(tag, tag): value for tag,
                          value in exif_data.get_ifd(34853).items()}
-               
-            latitude = gps_info["GPSLatitude"]
-            longitude = gps_info["GPSLongitude"]
-            latitude_ref = gps_info["GPSLatitudeRef"]
-            longitude_ref = gps_info["GPSLongitudeRef"]
             
-            geo_search(latitude, longitude, latitude_ref, longitude_ref)
+            try: 
+                latitude = gps_info["GPSLatitude"]
+                longitude = gps_info["GPSLongitude"]
+                latitude_ref = gps_info["GPSLatitudeRef"]
+                longitude_ref = gps_info["GPSLongitudeRef"]
+            
+                geo_search(latitude, longitude, latitude_ref, longitude_ref)
+            except:
+                print("Not enough GPS info found")
          
-        if not(GPS_EXISTS):
-            print(f"GPS Information does not exist for {args.input_image}")        
+   
 
     else:
         print(join_content(output_content))
+
+
+def string_formatter(key, value):    
+    return f"{key:<{20}} {value:<{30}}\n"
+
+
 
 def write_to_file(file_name, content, directory):
     dir = f"{directory}/{file_name}"
