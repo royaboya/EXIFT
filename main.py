@@ -33,6 +33,7 @@ def set_arguments():
     parser.add_argument("-a", action="store_true", help="display all exif data available")
     parser.add_argument("-b", "--batch", help=BATCH)
     parser.add_argument("--filter", choices = ["jpg", "tiff"], help = "")
+    parser.add_argument("-j", "--json", help="json")
    
 
 def main():
@@ -139,6 +140,10 @@ def main():
               gps_output += string_formatter(k, str(v))
 
             print(gps_output)
+    if args.j:
+        # perhaps automatically create ___.json in /json so no need to supply path?
+        print("json option called")
+        return
     else:
         print(join_content(output_content))
 
