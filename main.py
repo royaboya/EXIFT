@@ -7,6 +7,7 @@ from PIL.ExifTags import GPSTAGS
 import PIL.Image
 import PIL.ImageChops
 from PIL.ExifTags import Base
+import json
 
 from search import geo_search
 
@@ -33,7 +34,7 @@ def set_arguments():
     parser.add_argument("-a", action="store_true", help="display all exif data available")
     parser.add_argument("-b", "--batch", help=BATCH)
     parser.add_argument("--filter", choices = ["jpg", "tiff"], help = "")
-    parser.add_argument("-j", "--json", help="json")
+    parser.add_argument("-j", action="store_true", help="json dump in /json")
    
 
 def main():
@@ -142,8 +143,12 @@ def main():
             print(gps_output)
     if args.j:
         # perhaps automatically create ___.json in /json so no need to supply path?
+        # todo #2: support dumps for -g too?
         print("json option called")
-        return
+        # oh my god i need to ensure that the data can be serialized, which it cannot (example: IFD 282 is broken)
+        # MAN
+        with open(f"json_dumps/test.json", "w") as out:
+            json.dump(dict(exif_data), out)
     else:
         print(join_content(output_content))
 
