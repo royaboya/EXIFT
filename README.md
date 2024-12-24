@@ -1,5 +1,5 @@
 # EXIFT
-Python program to take in images and read its exif data
+Simple Python program to take in images and read its exif data using `PIL`
 
 usage: `main.py [-h] [-i INPUT_IMAGE] [-o OUTPUT_FILE] [-d DIRECTORY] [-s] [-g]`
 ```
@@ -12,6 +12,7 @@ options:
   -d DIRECTORY, --directory DIRECTORY
                         output directory, default is ./out
   -s                    search general GPS location on maps
+  -g                    display GPS specific information
 ```
 
 

@@ -16,9 +16,10 @@ def set_arguments():
     INPUT_IMAGE_TEXT = "help-image"
     OUTPUT_FILE_TEXT = "output file name"
     DIRECTORY = "output directory, default is ./out"
+    BATCH = "Process directory of images"
 
-    SEARCH_FLAG = "search general GPS location on maps"
-    GPS_FLAG = ""
+    SEARCH_FLAG = "search image's general GPS location on maps"
+    GPS_FLAG = "displays in-depth GPS info"
     
     parser.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT)    
     parser.add_argument("-o", "--output-file", help=OUTPUT_FILE_TEXT)
@@ -26,9 +27,12 @@ def set_arguments():
     
 
     parser.add_argument("-s", action="store_true", help=SEARCH_FLAG)
-    
-    # this option to display GPS info if it exists
     parser.add_argument("-g", action="store_true", help=GPS_FLAG)
+    
+    # UNFINISHED FLAGS/OPTIONS
+    parser.add_argument("-a", action="store_true", help="display all exif data available")
+    parser.add_argument("-b", "--batch", help=BATCH)
+    parser.add_argument("--filter", choices = ["jpg", "tiff"], help = "")
    
 
 def main():
@@ -48,8 +52,7 @@ def main():
             exif_data = input_image.getexif()
                        
             GPS_EXISTS = (34853 in [k for k in exif_data.keys()])                       
-                            
-                        
+                                  
             header = f"EXIF Metadata Summary for {args.input_image}:\n"
             output_content += create_section_line(len(header))
             output_content += header
@@ -69,14 +72,17 @@ def main():
             # TODO: handle file info in separate method
             
             # FILE DETAILS
-            
             output_content += string_formatter("File Name", os.path.basename(args.input_image))
             output_content += string_formatter("File Size", f"{os.path.getsize(args.input_image)} bytes")
             output_content += string_formatter("Image Dimensions", f"{input_image.height} x {input_image.width} (px)")
             output_content += string_formatter("File Extension", os.path.splitext(args.input_image)[1])
-            # output_content += string_formatter("")
 
-
+    # not sure if it truly gets tags that have not been processed by the earlier call
+    # if args.a:
+    #     for tag_id, value in exif_data.items():
+    #         tag_name = PIL.ExifTags.TAGS.get(tag_id, tag_id)
+    #         print(f"{tag_name}: {value}")
+    #     return
     if args.output_file:
         # writes to default (./out), otherwise is in -d option, assumes input is a regular file and not a path
         write_to_file(args.output_file, join_content(output_content), "./out")
@@ -91,7 +97,7 @@ def main():
             write_to_file("exif data", join_content(output_content), path)
             
         except PermissionError:
-            print(f"Permission Denied: Cannot write/create: {path}")
+            print(f"Permission Denied: Cannot write/create at: {path}")
         
         except OSError as error:
             print(f"Error: {error}" )
@@ -111,7 +117,6 @@ def main():
                             value in exif_data.get_ifd(34853).items()}
 
         if args.s:
-            # if both work then run search
             if not(GPS_EXISTS):
                 print(f"GPS Information does not exist for {args.input_image}")
                 return      
@@ -134,18 +139,14 @@ def main():
               gps_output += string_formatter(k, str(v))
 
             print(gps_output)
-    
     else:
         print(join_content(output_content))
 
 
-'''
-String formats for aligning by column, should take in two strings ideally
-'''
-def string_formatter(key, value):    
+
+def string_formatter(key, value):
+    ''' String formats for aligning by column, should take in two strings ideally '''
     return f"{key:<{20}}: {value:<{30}}\n"
-
-
 
 def write_to_file(file_name, content, directory):
     dir = f"{directory}/{file_name}"
