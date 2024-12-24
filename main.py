@@ -67,11 +67,14 @@ def main():
             output_content += create_section_line(len(header))
             
             # TODO: handle file info in separate method
+            
+            # FILE DETAILS
+            
             output_content += string_formatter("File Name", os.path.basename(args.input_image))
-            output_content += string_formatter("File Size", os.path.getsize(args.input_image))
-            # todo: combine hxw into one display
-            output_content += string_formatter("Image Height (px)", input_image.height)
-            output_content += string_formatter("Image Width (px)", input_image.width)
+            output_content += string_formatter("File Size", f"{os.path.getsize(args.input_image)} bytes")
+            output_content += string_formatter("Image Dimensions", f"{input_image.height} x {input_image.width} (px)")
+            output_content += string_formatter("File Extension", os.path.splitext(args.input_image)[1])
+            # output_content += string_formatter("")
 
 
     if args.output_file:
@@ -151,10 +154,8 @@ def write_to_file(file_name, content, directory):
     with open(dir, "w") as file:
         file.write(content)    
     
-# TODO: remove & replace with formatting
+# TODO: remove & replace with formatting?
 def create_section_line(n):
-    if n > 40:
-        n = 40
     if n < 0:
         n = 1
     return "="*n + "\n"

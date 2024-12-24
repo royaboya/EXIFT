@@ -29,6 +29,3 @@ def dms_to_decimal(deg, min, sec, ref):
         decimal_conversion *= -1
     return decimal_conversion
  
- 
-#def geo_search_degrees():
-#    pass
