@@ -1,15 +1,16 @@
-import os
 import argparse
-import PIL.ExifTags
-
-from PIL.ExifTags import GPSTAGS
-
-import PIL.Image
-import PIL.ImageChops
-from PIL.ExifTags import Base
 import json
+import os
+
+from constants import GPS_IFD
+
+from PIL import ExifTags, Image
+from PIL.ExifTags import Base, GPSTAGS
+from PIL.TiffImagePlugin import IFDRational
+
 
 from search import geo_search
+
 
 parser = argparse.ArgumentParser()
     
@@ -29,12 +30,13 @@ def set_arguments():
 
     parser.add_argument("-s", action="store_true", help=SEARCH_FLAG)
     parser.add_argument("-g", action="store_true", help=GPS_FLAG)
+    parser.add_argument("-j", action="store_true", help="json dump in /json")
     
     # UNFINISHED FLAGS/OPTIONS
     parser.add_argument("-a", action="store_true", help="display all exif data available")
     parser.add_argument("-b", "--batch", help=BATCH)
     parser.add_argument("--filter", choices = ["jpg", "tiff"], help = "")
-    parser.add_argument("-j", action="store_true", help="json dump in /json")
+  
    
 
 def main():
@@ -50,10 +52,10 @@ def main():
         if not(os.path.isfile(args.input_image)):
             raise FileNotFoundError
 
-        with PIL.Image.open(args.input_image) as input_image:
+        with Image.open(args.input_image) as input_image:
             exif_data = input_image.getexif()
                        
-            GPS_EXISTS = (34853 in [k for k in exif_data.keys()])                       
+            GPS_EXISTS = (GPS_IFD in [k for k in exif_data.keys()])                       
                                   
             header = f"EXIF Metadata Summary for {args.input_image}:\n"
             output_content += create_section_line(len(header))
@@ -71,9 +73,9 @@ def main():
             output_content += "File Summary:\n"
             output_content += create_section_line(len(header))
             
-            # TODO: handle file info in separate method
+           
             
-            # FILE DETAILS
+            # FILE DETAILS  # TODO: handle file info in separate method
             output_content += string_formatter("File Name", os.path.basename(args.input_image))
             output_content += string_formatter("File Size", f"{os.path.getsize(args.input_image)} bytes")
             output_content += string_formatter("Image Dimensions", f"{input_image.height} x {input_image.width} (px)")
@@ -116,7 +118,7 @@ def main():
             return
         
         gps_info = {GPSTAGS.get(tag, tag): value for tag,
-                            value in exif_data.get_ifd(34853).items()}
+                            value in exif_data.get_ifd(GPS_IFD).items()}
 
         if args.s:
             if not(GPS_EXISTS):
@@ -148,10 +150,15 @@ def main():
         # oh my god i need to ensure that the data can be serialized, which it cannot (example: IFD 282 is broken)
         # MAN
         with open(f"json_dumps/test.json", "w") as out:
-            json.dump(dict(exif_data), out)
+            json.dump(dict(exif_data), out, default=json_serializable)
     else:
         print(join_content(output_content))
 
+
+def json_serializable(obj):
+    if isinstance(obj, IFDRational):
+        return float(obj)  
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 
 def string_formatter(key, value):
@@ -165,8 +172,9 @@ def write_to_file(file_name, content, directory):
     with open(dir, "w") as file:
         file.write(content)    
     
-# TODO: remove & replace with formatting?
+
 def create_section_line(n):
+    # TODO: remove & replace with formatting?
     if n < 0:
         n = 1
     return "="*n + "\n"
