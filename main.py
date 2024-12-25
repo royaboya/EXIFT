@@ -4,13 +4,11 @@ import os
 
 from constants import GPS_IFD
 
-from PIL import ExifTags, Image
+from PIL import Image
 from PIL.ExifTags import Base, GPSTAGS
 from PIL.TiffImagePlugin import IFDRational
 
-
 from search import geo_search
-
 
 parser = argparse.ArgumentParser()
     
@@ -22,15 +20,15 @@ def set_arguments():
 
     SEARCH_FLAG = "search image's general GPS location on maps"
     GPS_FLAG = "displays in-depth GPS info"
+    JSON = "dumps output to a .json file in ./json_dumps"
     
     parser.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT)    
     parser.add_argument("-o", "--output-file", help=OUTPUT_FILE_TEXT)
     parser.add_argument("-d","--directory", help=DIRECTORY)
     
-
     parser.add_argument("-s", action="store_true", help=SEARCH_FLAG)
     parser.add_argument("-g", action="store_true", help=GPS_FLAG)
-    parser.add_argument("-j", action="store_true", help="json dump in /json")
+    parser.add_argument("-j", action="store_true", help=JSON)
     
     # UNFINISHED FLAGS/OPTIONS
     parser.add_argument("-a", action="store_true", help="display all exif data available")
@@ -58,9 +56,11 @@ def main():
             GPS_EXISTS = (GPS_IFD in [k for k in exif_data.keys()])                       
                                   
             header = f"EXIF Metadata Summary for {args.input_image}:\n"
-            output_content += create_section_line(len(header))
+            section_line = create_section_line(len(header))
+            
+            output_content += section_line
             output_content += header
-            output_content += create_section_line(len(header))
+            output_content += section_line
             
             
             for(exif_tag, v) in exif_data.items():
@@ -69,11 +69,9 @@ def main():
                 output_content += formatted_line
                 
                 
-            output_content += create_section_line(len(header))
+            output_content += section_line
             output_content += "File Summary:\n"
-            output_content += create_section_line(len(header))
-            
-           
+            output_content += section_line
             
             # FILE DETAILS  # TODO: handle file info in separate method
             output_content += string_formatter("File Name", os.path.basename(args.input_image))
@@ -142,13 +140,14 @@ def main():
             for k, v in dict(gps_info).items():
               gps_output += string_formatter(k, str(v))
 
+            if args.j:
+                with open(f"json_dumps/test.json", "w") as out:
+                    json.dump(dict(gps_info), out, default=json_serializable)
+                return
+            
             print(gps_output)
     if args.j:
-        # perhaps automatically create ___.json in /json so no need to supply path?
-        # todo #2: support dumps for -g too?
-        print("json option called")
-        # oh my god i need to ensure that the data can be serialized, which it cannot (example: IFD 282 is broken)
-        # MAN
+        # todo: add support for diff file names
         with open(f"json_dumps/test.json", "w") as out:
             json.dump(dict(exif_data), out, default=json_serializable)
     else:
@@ -167,11 +166,9 @@ def string_formatter(key, value):
 
 def write_to_file(file_name, content, directory):
     dir = f"{directory}/{file_name}"
-    #dir = os.path.join("./out/", file_name)
     
     with open(dir, "w") as file:
         file.write(content)    
-    
 
 def create_section_line(n):
     # TODO: remove & replace with formatting?
