@@ -1,8 +1,6 @@
 import webbrowser as browser
 
 GOOGLE_MAPS_URL = "https://www.google.com/maps"
-# DEGREE_ENCODING = "%C2%B0"
-# DOUBLE_QUOTE_ENCODING = "%22"
 
 def geo_search(latitude:tuple, longitude:tuple, ref_a, ref_b):
     latitude_degree = latitude[0]

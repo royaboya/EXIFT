@@ -31,9 +31,9 @@ def set_arguments():
     parser.add_argument("-j", action="store_true", help=JSON)
     
     # UNFINISHED FLAGS/OPTIONS
-    parser.add_argument("-a", action="store_true", help="display all exif data available")
-    parser.add_argument("-b", "--batch", help=BATCH)
-    parser.add_argument("--filter", choices = ["jpg", "tiff"], help = "")
+    # parser.add_argument("-a", action="store_true", help="display all exif data available")
+    # parser.add_argument("-b", "--batch", help=BATCH)
+    # parser.add_argument("--filter", choices = ["jpg", "tiff"], help = "")
   
    
 
@@ -52,7 +52,8 @@ def main():
 
         with Image.open(args.input_image) as input_image:
             exif_data = input_image.getexif()
-                       
+            
+            #TODO: remove global flag and replace with helper     
             GPS_EXISTS = (GPS_IFD in [k for k in exif_data.keys()])                       
                                   
             header = f"EXIF Metadata Summary for {args.input_image}:\n"
@@ -64,8 +65,7 @@ def main():
             
             
             for(exif_tag, v) in exif_data.items():
-                v_converted = str(v)
-                formatted_line = string_formatter(Base(exif_tag).name, v_converted)
+                formatted_line = string_formatter(Base(exif_tag).name, str(v))
                 output_content += formatted_line
                 
                 
@@ -73,7 +73,6 @@ def main():
             output_content += "File Summary:\n"
             output_content += section_line
             
-            # FILE DETAILS  # TODO: handle file info in separate method
             output_content += string_formatter("File Name", os.path.basename(args.input_image))
             output_content += string_formatter("File Size", f"{os.path.getsize(args.input_image)} bytes")
             output_content += string_formatter("Image Dimensions", f"{input_image.height} x {input_image.width} (px)")
@@ -169,6 +168,13 @@ def write_to_file(file_name, content, directory):
     
     with open(dir, "w") as file:
         file.write(content)    
+
+def validate_dependencies(args):
+    pass
+
+def dump_to_json():
+    pass
+
 
 def create_section_line(n):
     # TODO: remove & replace with formatting?
