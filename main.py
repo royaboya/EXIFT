@@ -13,7 +13,7 @@ from search import geo_search
 parser = argparse.ArgumentParser()
     
 def set_arguments():
-    # TODO: create groups
+
     INPUT_IMAGE_TEXT = "help-image"
     OUTPUT_FILE_TEXT = "output file name"
     DIRECTORY = "output directory, default is ./out"
@@ -23,23 +23,26 @@ def set_arguments():
     JSON = "dumps output to a .json file in ./json_dumps"
     
     input_group = parser.add_argument_group(title="input options")
-    input_group.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT)    
-    input_group.add_argument("-o", "--output-file", help=OUTPUT_FILE_TEXT)
-    input_group.add_argument("-d","--directory", help=DIRECTORY)
+    input_group.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT, required=True)
     
     output_group = parser.add_argument_group(title="output options")
-    output_group.add_argument("-s", "--search", action="store_true", help=SEARCH_FLAG)
-    output_group.add_argument("-g", "--gps", action="store_true", help=GPS_FLAG)
     output_group.add_argument("-j", "--json", action="store_true", help=JSON)
+    output_group.add_argument("-o", "--output-file", help=OUTPUT_FILE_TEXT)
+    output_group.add_argument("-d","--directory", help=DIRECTORY)
+    
+    gps_group = parser.add_argument_group(title="gps options")
+    gps_group.add_argument("-s", "--search", action="store_true", help=SEARCH_FLAG)
+    gps_group.add_argument("-g", "--gps", action="store_true", help=GPS_FLAG)
+    
     
     # UNFINISHED FLAGS/OPTIONS
+     # add -b to input group, set mutually exclusive
     
+    # batch to be added to input group
     # BATCH = "Process directory of images"
     # parser.add_argument("-a", action="store_true", help="display all exif data available")
     # parser.add_argument("-b", "--batch", help=BATCH)
-    # parser.add_argument("--filter", choices = ["jpg", "tiff"], help = "")
-  
-   
+    # parser.add_argument("=f", --filter", choices = ["jpg", "tiff"], help = "")
 
 def main():
     set_arguments()
@@ -48,21 +51,20 @@ def main():
     output_content = []
     exif_data = {}
     
-    GPS_EXISTS = False;
-    
+    # TODO : remove if check for args.input_image due to new requirement
     if args.input_image:
         if not(os.path.isfile(args.input_image)):
             raise FileNotFoundError
 
+        # todo: change name of input_image for more clarity between args. and input_image
         with Image.open(args.input_image) as input_image:
-            exif_data = input_image.getexif()
-            
-            #TODO: remove global flag and replace with helper     
-            GPS_EXISTS = (GPS_IFD in [k for k in exif_data.keys()])                       
+            exif_data = input_image.getexif()                  
                                   
             header = f"EXIF Metadata Summary for {args.input_image}:\n"
             section_line = create_section_line(len(header))
             
+            
+            # todo: make header into separate function
             output_content += section_line
             output_content += header
             output_content += section_line
@@ -74,20 +76,11 @@ def main():
                 
                 
             output_content += section_line
-            output_content += "File Summary:\n"
+            output_content += "File Summary\n"
             output_content += section_line
-            
-            output_content += string_formatter("File Name", os.path.basename(args.input_image))
-            output_content += string_formatter("File Size", f"{os.path.getsize(args.input_image)} bytes")
-            output_content += string_formatter("Image Dimensions", f"{input_image.height} x {input_image.width} (px)")
-            output_content += string_formatter("File Extension", os.path.splitext(args.input_image)[1])
 
-    # not sure if it truly gets tags that have not been processed by the earlier call
-    # if args.a:
-    #     for tag_id, value in exif_data.items():
-    #         tag_name = PIL.ExifTags.TAGS.get(tag_id, tag_id)
-    #         print(f"{tag_name}: {value}")
-    #     return
+            create_file_summary(args, output_content)
+
     if args.output_file:
         # writes to default (./out), otherwise is in -d option, assumes input is a regular file and not a path
         write_to_file(args.output_file, join_content(output_content), "./out")
@@ -108,26 +101,21 @@ def main():
             print(f"Error: {error}" )
 
     
-    if args.s or args.g:
+    if args.search or args.gps:
         gps_output = ""
         
-        if not(args.input_image):
-            parser.error("option requires --input-image")
         
-        if not(GPS_EXISTS):
+        if not(has_gps_data(exif_data)):
             print(f"GPS Information does not exist for {args.input_image}")
             return
         
         gps_info = {GPSTAGS.get(tag, tag): value for tag,
                             value in exif_data.get_ifd(GPS_IFD).items()}
 
-        if args.s:
-            if not(GPS_EXISTS):
+        if args.search:
+            if not(has_gps_data(exif_data)):
                 print(f"GPS Information does not exist for {args.input_image}")
                 return      
-            
-            if not(args.input_image):
-                parser.error("--search requires --input-image")
                 
             try: 
                 latitude = gps_info["GPSLatitude"]
@@ -139,27 +127,39 @@ def main():
             except:
                 print("Not enough GPS info found to perform a google search")
                 
-        if args.g:
+        if args.gps:
             for k, v in dict(gps_info).items():
               gps_output += string_formatter(k, str(v))
 
-            if args.j:
+            if args.json:
                 with open(f"json_dumps/test.json", "w") as out:
                     json.dump(dict(gps_info), out, default=json_serializable)
                 return
             
             print(gps_output)
-    if args.j:
+            
+    # TODO: change json check into one, store all json into a singular collection, then write to if needed
+    if args.json:
         # todo: add support for diff file names
         with open(f"json_dumps/test.json", "w") as out:
             json.dump(dict(exif_data), out, default=json_serializable)
     else:
         print(join_content(output_content))
 
+def create_file_summary(args : argparse.Namespace, output) -> None:
+    image = Image.open(args.input_image)
+    
+    output += string_formatter("File Name", os.path.basename(args.input_image))
+    output += string_formatter("File Size", f"{os.path.getsize(args.input_image)} bytes")
+    output += string_formatter("Image Dimensions", f"{image.height} x {image.width} (px)")
+    output += string_formatter("File Extension", os.path.splitext(args.input_image)[1])
+    
 
 def json_serializable(obj):
     if isinstance(obj, IFDRational):
-        return float(obj)  
+        return float(obj)
+    elif isinstance(obj, bytes):
+        return str(obj)  
     raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 
@@ -167,28 +167,33 @@ def string_formatter(key, value):
     ''' String formats for aligning by column, should take in two strings ideally '''
     return f"{key:<{20}}: {value:<{30}}\n"
 
-def write_to_file(file_name, content, directory):
+def write_to_file(file_name, content, directory) -> None:
     dir = f"{directory}/{file_name}"
     
     with open(dir, "w") as file:
         file.write(content)    
 
-def validate_dependencies(args):
-    pass
 
-def dump_to_json():
-    pass
-
-
-def create_section_line(n):
+def has_gps_data(exif_data) -> bool:
+    """Checks whether or not there is GPS info found from PIL"""
+    return GPS_IFD in [k for k in exif_data.keys()]
+     
+def create_section_line(n) -> str:
+    """Creates a separation line"""
     # TODO: remove & replace with formatting?
     if n < 0:
         n = 1
     return "="*n + "\n"
 
 
-def join_content(content_lst):
+def join_content(content_lst:list[str]) -> str:
+    """Joins together the output string array's contents"""
+    assert(content_lst != None)
+    
     return "".join(content_lst)
+
+def dump_to_json() -> None:
+    pass
 
 
 if __name__ == "__main__":
