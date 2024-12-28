@@ -13,24 +13,28 @@ from search import geo_search
 parser = argparse.ArgumentParser()
     
 def set_arguments():
+    # TODO: create groups
     INPUT_IMAGE_TEXT = "help-image"
     OUTPUT_FILE_TEXT = "output file name"
     DIRECTORY = "output directory, default is ./out"
-    BATCH = "Process directory of images"
-
+  
     SEARCH_FLAG = "search image's general GPS location on maps"
     GPS_FLAG = "displays in-depth GPS info"
     JSON = "dumps output to a .json file in ./json_dumps"
     
-    parser.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT)    
-    parser.add_argument("-o", "--output-file", help=OUTPUT_FILE_TEXT)
-    parser.add_argument("-d","--directory", help=DIRECTORY)
+    input_group = parser.add_argument_group(title="input options")
+    input_group.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT)    
+    input_group.add_argument("-o", "--output-file", help=OUTPUT_FILE_TEXT)
+    input_group.add_argument("-d","--directory", help=DIRECTORY)
     
-    parser.add_argument("-s", action="store_true", help=SEARCH_FLAG)
-    parser.add_argument("-g", action="store_true", help=GPS_FLAG)
-    parser.add_argument("-j", action="store_true", help=JSON)
+    output_group = parser.add_argument_group(title="output options")
+    output_group.add_argument("-s", "--search", action="store_true", help=SEARCH_FLAG)
+    output_group.add_argument("-g", "--gps", action="store_true", help=GPS_FLAG)
+    output_group.add_argument("-j", "--json", action="store_true", help=JSON)
     
     # UNFINISHED FLAGS/OPTIONS
+    
+    # BATCH = "Process directory of images"
     # parser.add_argument("-a", action="store_true", help="display all exif data available")
     # parser.add_argument("-b", "--batch", help=BATCH)
     # parser.add_argument("--filter", choices = ["jpg", "tiff"], help = "")
