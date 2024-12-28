@@ -2,7 +2,7 @@ import webbrowser as browser
 
 GOOGLE_MAPS_URL = "https://www.google.com/maps"
 
-def geo_search(latitude:tuple, longitude:tuple, ref_a, ref_b):
+def geo_search(latitude:tuple, longitude:tuple, ref_a, ref_b) -> None:
     latitude_degree = latitude[0]
     latitude_minute = latitude[1]
     latitude_second = latitude[2] 
@@ -20,7 +20,7 @@ def geo_search(latitude:tuple, longitude:tuple, ref_a, ref_b):
     browser.open(url_a + url_b)
  
  
-def dms_to_decimal(deg, min, sec, ref):
+def dms_to_decimal(deg, min, sec, ref) -> float:
     # move rounding to string format later
     decimal_conversion = round(deg + (float(min)/60) + (float(sec)/3600), 6) 
     if ref in ["W", "S"]:

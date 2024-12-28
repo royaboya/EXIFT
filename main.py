@@ -4,6 +4,8 @@ import os
 
 from constants import GPS_IFD
 
+from exif_explanations import get_info
+
 from PIL import Image
 from PIL.ExifTags import Base, GPSTAGS
 from PIL.TiffImagePlugin import IFDRational
@@ -17,13 +19,16 @@ def set_arguments():
     INPUT_IMAGE_TEXT = "help-image"
     OUTPUT_FILE_TEXT = "output file name"
     DIRECTORY = "output directory, default is ./out"
-  
+    BATCH = "Process directory of images [UNFINISHED]"
+    
     SEARCH_FLAG = "search image's general GPS location on maps"
     GPS_FLAG = "displays in-depth GPS info"
     JSON = "dumps output to a .json file in ./json_dumps"
+    EXPLANATION = "include exif tag explanations and definitions [UNFINISHED]"
     
     input_group = parser.add_argument_group(title="input options")
     input_group.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT, required=True)
+    input_group.add_argument("-b", "--batch", help=BATCH)
     
     output_group = parser.add_argument_group(title="output options")
     output_group.add_argument("-j", "--json", action="store_true", help=JSON)
@@ -34,15 +39,9 @@ def set_arguments():
     gps_group.add_argument("-s", "--search", action="store_true", help=SEARCH_FLAG)
     gps_group.add_argument("-g", "--gps", action="store_true", help=GPS_FLAG)
     
-    
-    # UNFINISHED FLAGS/OPTIONS
-     # add -b to input group, set mutually exclusive
-    
-    # batch to be added to input group
-    # BATCH = "Process directory of images"
-    # parser.add_argument("-a", action="store_true", help="display all exif data available")
-    # parser.add_argument("-b", "--batch", help=BATCH)
-    # parser.add_argument("=f", --filter", choices = ["jpg", "tiff"], help = "")
+    miscellaneous_group = parser.add_argument_group(title="miscellaneous")
+    miscellaneous_group.add_argument("-e", "--explanation",action="store_true", help=EXPLANATION)
+
 
 def main():
     set_arguments()
@@ -50,6 +49,7 @@ def main():
     args = parser.parse_args()
     output_content = []
     exif_data = {}
+    json_output = {}
     
     # TODO : remove if check for args.input_image due to new requirement
     if args.input_image:
@@ -70,6 +70,9 @@ def main():
                 formatted_line = string_formatter(Base(exif_tag).name, str(v))
                 output_content += formatted_line
                 
+                if args.explanation:
+                    output_content += f"\t--> {get_info(Base(exif_tag).name)}\n"
+
             create_section_header("FILE SUMMARY", output_content, section_line)
             
             create_file_summary(args, output_content)
