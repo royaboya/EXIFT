@@ -60,25 +60,18 @@ def main():
         with Image.open(args.input_image) as input_image:
             exif_data = input_image.getexif()                  
                                   
-            header = f"EXIF Metadata Summary for {args.input_image}:\n"
+            header = f"EXIF Metadata Summary for {args.input_image}:"
             section_line = create_section_line(len(header))
             
-            
-            # todo: make header into separate function
-            output_content += section_line
-            output_content += header
-            output_content += section_line
-            
+            create_section_header(header, output_content, section_line)
+
             
             for(exif_tag, v) in exif_data.items():
                 formatted_line = string_formatter(Base(exif_tag).name, str(v))
                 output_content += formatted_line
                 
-                
-            output_content += section_line
-            output_content += "File Summary\n"
-            output_content += section_line
-
+            create_section_header("FILE SUMMARY", output_content, section_line)
+            
             create_file_summary(args, output_content)
 
     if args.output_file:
@@ -102,8 +95,6 @@ def main():
 
     
     if args.search or args.gps:
-        gps_output = ""
-        
         
         if not(has_gps_data(exif_data)):
             print(f"GPS Information does not exist for {args.input_image}")
@@ -128,15 +119,15 @@ def main():
                 print("Not enough GPS info found to perform a google search")
                 
         if args.gps:
+            create_section_header("GPS INFO", output_content, section_line)
             for k, v in dict(gps_info).items():
-              gps_output += string_formatter(k, str(v))
-
+              output_content += string_formatter(k, str(v))
+              # gps_output
             if args.json:
                 with open(f"json_dumps/test.json", "w") as out:
                     json.dump(dict(gps_info), out, default=json_serializable)
                 return
             
-            print(gps_output)
             
     # TODO: change json check into one, store all json into a singular collection, then write to if needed
     if args.json:
@@ -185,6 +176,11 @@ def create_section_line(n) -> str:
         n = 1
     return "="*n + "\n"
 
+def create_section_header(title, output, section_line) -> None:
+    """Adds a section header with given title to output array"""
+    output += section_line
+    output += title + "\n"
+    output += section_line
 
 def join_content(content_lst:list[str]) -> str:
     """Joins together the output string array's contents"""

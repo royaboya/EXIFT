@@ -1,5 +1,6 @@
 # EXIFT
 Simple Python program to take in images and read its exif data using `PIL`
+Called it EXIFT because I wanted it to sound like "ex-sift" sort of like sifting through images
 
 usage: `main.py [-h] [-i INPUT_IMAGE] [-o OUTPUT_FILE] [-d DIRECTORY] [-s] [-g]`
 ```
