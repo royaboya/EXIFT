@@ -17,21 +17,20 @@ parser = argparse.ArgumentParser()
 def set_arguments():
 
     INPUT_IMAGE_TEXT = "help-image"
-    OUTPUT_FILE_TEXT = "output file name"
+    OUTPUT_FILE_TEXT = "writes into file with the given name into /out"
     DIRECTORY = "output directory, default is ./out"
-    BATCH = "Process directory of images [UNFINISHED]"
     
     SEARCH_FLAG = "search image's general GPS location on maps"
-    GPS_FLAG = "displays in-depth GPS info"
+    GPS_FLAG = "displays in-depth GPS info with the output"
     JSON = "dumps output to a .json file in ./json_dumps"
     EXPLANATION = "include exif tag explanations and definitions [UNFINISHED]"
     
     input_group = parser.add_argument_group(title="input options")
-    input_group.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT, required=True)
-    input_group.add_argument("-b", "--batch", help=BATCH)
+    input_group.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT, required=True)    
     
     output_group = parser.add_argument_group(title="output options")
-    output_group.add_argument("-j", "--json", action="store_true", help=JSON)
+    output_group.add_argument("-j", "--json", help=JSON)
+    # output_group.add_argument("-j", "--json output file name", action="store_true", help=JSON)
     output_group.add_argument("-o", "--output-file", help=OUTPUT_FILE_TEXT)
     output_group.add_argument("-d","--directory", help=DIRECTORY)
     
@@ -50,37 +49,38 @@ def main():
     output_content = []
     exif_data = {}
     json_output = {}
-    
-    # TODO : remove if check for args.input_image due to new requirement
-    if args.input_image:
-        if not(os.path.isfile(args.input_image)):
-            raise FileNotFoundError
+    exif_json_tmp = {}
+        
+    if not(os.path.isfile(args.input_image)):
+        raise FileNotFoundError
 
-        # todo: change name of input_image for more clarity between args. and input_image
-        with Image.open(args.input_image) as input_image:
-            exif_data = input_image.getexif()                  
-                                  
-            header = f"EXIF Metadata Summary for {args.input_image}:"
-            section_line = create_section_line(len(header))
-            
-            create_section_header(header, output_content, section_line)
+    with Image.open(args.input_image) as input_image:
+        exif_data = input_image.getexif()                  
+                                
+        header = f"EXIF Metadata Summary for {args.input_image}:"
+        section_line = create_section_line(len(header))
+        
+        create_section_header(header, output_content, section_line)
 
+        
+        for(exif_tag, v) in exif_data.items():
+            formatted_line = string_formatter(Base(exif_tag).name, str(v))
+            output_content += formatted_line
+                        
+            exif_json_tmp.update({Base(exif_tag).name : v})
             
-            for(exif_tag, v) in exif_data.items():
-                formatted_line = string_formatter(Base(exif_tag).name, str(v))
-                output_content += formatted_line
+            if args.explanation:
+                output_content += f"\t--> {get_info(Base(exif_tag).name)}\n"
                 
-                if args.explanation:
-                    output_content += f"\t--> {get_info(Base(exif_tag).name)}\n"
-
-            create_section_header("FILE SUMMARY", output_content, section_line)
-            
-            create_file_summary(args, output_content)
+        json_output.update(make_file_dict(f"{os.path.basename(args.input_image)}", dict(exif_json_tmp)))
+        exif_json_tmp.clear()
+        
+        create_section_header("FILE SUMMARY", output_content, section_line)
+        
+        create_file_summary(args, output_content)
 
     if args.output_file:
-        # writes to default (./out), otherwise is in -d option, assumes input is a regular file and not a path
         write_to_file(args.output_file, join_content(output_content), "./out")
-
 
     if args.directory:
         path = args.directory
@@ -123,20 +123,25 @@ def main():
                 
         if args.gps:
             create_section_header("GPS INFO", output_content, section_line)
-            for k, v in dict(gps_info).items():
+
+            gps_items = dict(gps_info).items()
+            
+            for k, v in gps_items:
               output_content += string_formatter(k, str(v))
-              # gps_output
-            if args.json:
-                with open(f"json_dumps/test.json", "w") as out:
-                    json.dump(dict(gps_info), out, default=json_serializable)
-                return
+              exif_json_tmp.update({k : v})
             
+            gps_json = make_file_dict("GPS", dict(exif_json_tmp))
             
-    # TODO: change json check into one, store all json into a singular collection, then write to if needed
+            json_output.update(gps_json)
+            exif_json_tmp.clear()              
+
     if args.json:
-        # todo: add support for diff file names
-        with open(f"json_dumps/test.json", "w") as out:
-            json.dump(dict(exif_data), out, default=json_serializable)
+        if not(args.json.endswith(".json")):
+            dump_to_json(f"json_dumps/{args.json}.json", json_output)
+        else:
+            dump_to_json(f"json_dumps/{args.json}", json_output)
+        
+        print(f"Dumped Contents into /json_dumps/{args.json}.json")
     else:
         print(join_content(output_content))
 
@@ -191,9 +196,18 @@ def join_content(content_lst:list[str]) -> str:
     
     return "".join(content_lst)
 
-def dump_to_json() -> None:
-    pass
+def dump_to_json(path:str, dict_data) -> None:
+    """Attempts to output the exif data into a .json"""
+    try:
+        with open(path, "w") as out:
+            json.dump(dict(dict_data), out, default=json_serializable, indent=4)
+    except:
+        print(f"There was an error trying to write to {path}")
 
+def make_file_dict(name:str, dict_content: dict):
+    tmp = dict()
+    tmp.update({name:dict_content})
+    return tmp
 
 if __name__ == "__main__":
     main()
