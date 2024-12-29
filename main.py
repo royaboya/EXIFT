@@ -23,7 +23,7 @@ def set_arguments():
     SEARCH_FLAG = "search image's general GPS location on maps"
     GPS_FLAG = "displays in-depth GPS info with the output"
     JSON = "dumps output to a .json file in ./json_dumps"
-    EXPLANATION = "include exif tag explanations and definitions [UNFINISHED]"
+    EXPLANATION = "include exif tag explanations/definitions"
     
     input_group = parser.add_argument_group(title="input options")
     input_group.add_argument("-i", "--input-image", help=INPUT_IMAGE_TEXT, required=True)    
@@ -128,6 +128,9 @@ def main():
             for k, v in gps_items:
               output_content += string_formatter(k, str(v))
               exif_json_tmp.update({k : v})
+              
+              if args.explanation:
+                output_content += f"\t--> {get_info(k)}\n"
             
             gps_json = make_file_dict("GPS", dict(exif_json_tmp))
             
