@@ -62,7 +62,6 @@ def main():
         
         create_section_header(header, output_content, section_line)
 
-        
         for(exif_tag, v) in exif_data.items():
             formatted_line = string_formatter(Base(exif_tag).name, str(v))
             output_content += formatted_line
@@ -146,6 +145,7 @@ def main():
         print(join_content(output_content))
 
 def create_file_summary(args : argparse.Namespace, output) -> None:
+    """Writes all the file info into output array"""
     image = Image.open(args.input_image)
     
     output += string_formatter("File Name", os.path.basename(args.input_image))
@@ -204,7 +204,9 @@ def dump_to_json(path:str, dict_data) -> None:
     except:
         print(f"There was an error trying to write to {path}")
 
+# probably not needed
 def make_file_dict(name:str, dict_content: dict):
+    """Creates a dictionary with mapping name : dict"""
     tmp = dict()
     tmp.update({name:dict_content})
     return tmp
