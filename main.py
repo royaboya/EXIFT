@@ -30,7 +30,6 @@ def set_arguments():
     
     output_group = parser.add_argument_group(title="output options")
     output_group.add_argument("-j", "--json", help=JSON)
-    # output_group.add_argument("-j", "--json output file name", action="store_true", help=JSON)
     output_group.add_argument("-o", "--output-file", help=OUTPUT_FILE_TEXT)
     output_group.add_argument("-d","--directory", help=DIRECTORY)
     
@@ -133,6 +132,8 @@ def main():
                 output_content += f"\t--> {get_info(k)}\n"
             
             gps_json = make_file_dict("GPS", dict(exif_json_tmp))
+            
+            print(gps_json)
             
             json_output.update(gps_json)
             exif_json_tmp.clear()              
